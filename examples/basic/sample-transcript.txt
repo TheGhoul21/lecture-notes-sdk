@@ -1,0 +1,32 @@
+Today we'll be discussing neural networks, focusing on their basic architecture and the backpropagation algorithm.
+
+Let's start with the fundamental building block: the artificial neuron. Just like biological neurons in our brains, artificial neurons receive inputs, process them, and produce an output. Each input connection has an associated weight, and the neuron applies an activation function to the weighted sum of its inputs.
+
+The basic structure of a neural network consists of three types of layers:
+1. Input Layer: Receives the raw data
+2. Hidden Layers: Processes the information
+3. Output Layer: Produces the final result
+
+Let's look at the mathematical representation. For a single neuron:
+z = w₁x₁ + w₂x₂ + ... + wₙxₙ + b
+y = f(z)
+
+Where:
+- x₁, x₂, ..., xₙ are the inputs
+- w₁, w₂, ..., wₙ are the weights
+- b is the bias term
+- f is the activation function
+- y is the output
+
+Common activation functions include:
+- Sigmoid: f(x) = 1/(1 + e^(-x))
+- ReLU: f(x) = max(0, x)
+- tanh: f(x) = (e^x - e^(-x))/(e^x + e^(-x))
+
+Now, let's discuss backpropagation, the algorithm used to train neural networks. The key idea is to minimize the error by adjusting the weights and biases through gradient descent.
+
+The process involves two main steps:
+1. Forward Pass: Calculate the network's output
+2. Backward Pass: Propagate the error backward and update weights
+
+We'll continue with more details in the next lecture.

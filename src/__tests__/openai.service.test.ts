@@ -1,35 +1,56 @@
 // Define mock responses before any imports
 const mockBaseResponse = {
-    choices: [{ message: { content: 'Test content' } }],
+    choices: [{ 
+        message: { content: 'Test content' },
+        finish_reason: 'stop'
+    }],
     usage: { prompt_tokens: 100, completion_tokens: 200 }
 };
 
 const mockTruncatedResponse = {
-    choices: [{ message: { content: 'Truncated content...' } }],
+    choices: [{ 
+        message: { content: 'Truncated content...' },
+        finish_reason: 'length'
+    }],
     usage: { prompt_tokens: 100, completion_tokens: 200 }
 };
 
 const mockContinuationResponse = {
-    choices: [{ message: { content: 'Completed content' } }],
+    choices: [{ 
+        message: { content: 'Completed content' },
+        finish_reason: 'stop'
+    }],
     usage: { prompt_tokens: 50, completion_tokens: 100 }
 };
 
 const mockIncompleteLatexResponse = {
-    choices: [{ message: { content: '\\begin{theorem} Incomplete theorem' } }],
+    choices: [{ 
+        message: { content: '\\begin{theorem} Incomplete theorem' },
+        finish_reason: 'length'
+    }],
     usage: { prompt_tokens: 100, completion_tokens: 200 }
 };
 
 const mockLatexCompletionResponse = {
-    choices: [{ message: { content: '\\end{theorem}' } }],
+    choices: [{ 
+        message: { content: '\\end{theorem}' },
+        finish_reason: 'stop'
+    }],
     usage: { prompt_tokens: 50, completion_tokens: 100 }
 };
 
 const mockComplexResponse = {
-    choices: [{ message: { content: '\\begin{theorem}\nSome content\n\\end{theorem}\n```javascript\nconsole.log("test");\n```' } }]
+    choices: [{ 
+        message: { content: '\\begin{theorem}\nSome content\n\\end{theorem}\n```javascript\nconsole.log("test");\n```' },
+        finish_reason: 'stop'
+    }]
 };
 
 const mockIncompleteResponse = {
-    choices: [{ message: { content: '\\begin{theorem}\nSome content\n```javascript\nconsole.log("test");' } }]
+    choices: [{ 
+        message: { content: '\\begin{theorem}\nSome content\n```javascript\nconsole.log("test");' },
+        finish_reason: 'length'
+    }]
 };
 
 // Mock OpenAI class
@@ -124,6 +145,52 @@ describe('OpenAIService', () => {
                 .rejects
                 .toThrow('Failed to generate complete response after maximum attempts');
             expect(mockCreate).toHaveBeenCalledTimes(3); // MAX_ATTEMPTS
+        });
+
+        it('should handle response with stop finish_reason', async () => {
+            const response = {
+                choices: [{ 
+                    message: { content: 'Complete response.' },
+                    finish_reason: 'stop'
+                }]
+            };
+            mockCreate.mockResolvedValueOnce(response);
+            const notes = await service.generateLectureNotes('Test Topic');
+            expect(notes.content).toBe('Complete response.');
+            expect(mockCreate).toHaveBeenCalledTimes(1);
+        });
+
+        it('should continue generation on length finish_reason', async () => {
+            mockCreate
+                .mockResolvedValueOnce({
+                    choices: [{ 
+                        message: { content: 'Part 1' },
+                        finish_reason: 'length'
+                    }]
+                })
+                .mockResolvedValueOnce({
+                    choices: [{ 
+                        message: { content: 'Part 2' },
+                        finish_reason: 'stop'
+                    }]
+                });
+
+            const notes = await service.generateLectureNotes('Test Topic');
+            expect(notes.content).toBe('Part 1\nPart 2');
+            expect(mockCreate).toHaveBeenCalledTimes(2);
+        });
+
+        it('should handle missing finish_reason by falling back to content validation', async () => {
+            // Response without finish_reason (e.g. from a different API implementation)
+            const response = {
+                choices: [{ 
+                    message: { content: 'Complete response with proper ending.' }
+                }]
+            };
+            mockCreate.mockResolvedValueOnce(response);
+            const notes = await service.generateLectureNotes('Test Topic');
+            expect(notes.content).toBe('Complete response with proper ending.');
+            expect(mockCreate).toHaveBeenCalledTimes(1);
         });
     });
 
