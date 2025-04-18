@@ -1,0 +1,54 @@
+{
+  "name": "lecture-notes-sdk",
+  "version": "1.0.0",
+  "description": "SDK for generating and managing lecture notes using AI",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "prepare": "npm run build",
+    "prepublishOnly": "npm test",
+    "version": "git add -A src",
+    "postversion": "git push && git push --tags"
+  },
+  "keywords": [
+    "lecture-notes",
+    "ai",
+    "sdk"
+  ],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "require": "./dist/index.js",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist/**/*"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yourusername/lecture-notes-sdk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/yourusername/lecture-notes-sdk/issues"
+  },
+  "homepage": "https://github.com/yourusername/lecture-notes-sdk#readme",
+  "devDependencies": {
+    "@types/jest": "^29.5.14",
+    "@types/node": "^22.14.1",
+    "jest": "^29.7.0",
+    "ts-jest": "^29.3.2",
+    "typescript": "^5.8.3"
+  },
+  "dependencies": {
+    "axios": "^1.8.4",
+    "dotenv": "^16.5.0",
+    "openai": "^4.95.0"
+  }
+}

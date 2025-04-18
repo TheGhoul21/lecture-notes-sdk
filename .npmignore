@@ -1,0 +1,11 @@
+src/
+tests/
+coverage/
+.github/
+jest.config.js
+tsconfig.json
+.gitignore
+*.log
+.DS_Store
+.env*
+__tests__/
