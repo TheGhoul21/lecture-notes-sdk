@@ -24,6 +24,14 @@ const mockLatexCompletionResponse = {
     usage: { prompt_tokens: 50, completion_tokens: 100 }
 };
 
+const mockComplexResponse = {
+    choices: [{ message: { content: '\\begin{theorem}\nSome content\n\\end{theorem}\n```javascript\nconsole.log("test");\n```' } }]
+};
+
+const mockIncompleteResponse = {
+    choices: [{ message: { content: '\\begin{theorem}\nSome content\n```javascript\nconsole.log("test");' } }]
+};
+
 // Mock OpenAI class
 const mockCreate = jest.fn();
 const mockOpenAI = jest.fn().mockImplementation(() => ({
@@ -44,11 +52,24 @@ import { LectureFormat } from '../types/lecture.types';
 
 describe('OpenAIService', () => {
     let service: OpenAIService;
+    let serviceWithConfig: OpenAIService;
 
     beforeEach(() => {
         mockCreate.mockClear();
         mockCreate.mockResolvedValue(mockBaseResponse);
         service = new OpenAIService('test-api-key');
+        serviceWithConfig = new OpenAIService({
+            apiKey: 'test-api-key',
+            model: 'gpt-3.5-turbo',
+            temperature: 0.7,
+            maxTokens: 4000,
+            maxAttempts: 2,
+            responseValidation: {
+                checkLaTeXBalance: true,
+                checkCodeBlocks: true,
+                customIndicators: ['...', '[more]']
+            }
+        });
     });
 
     describe('generateLectureNotes', () => {
@@ -103,6 +124,60 @@ describe('OpenAIService', () => {
                 .rejects
                 .toThrow('Failed to generate complete response after maximum attempts');
             expect(mockCreate).toHaveBeenCalledTimes(3); // MAX_ATTEMPTS
+        });
+    });
+
+    describe('configuration', () => {
+        it('should use custom model configuration', async () => {
+            mockCreate.mockResolvedValueOnce(mockBaseResponse);
+            await serviceWithConfig.generateLectureNotes('Test Topic');
+            
+            expect(mockCreate).toHaveBeenCalledWith(expect.objectContaining({
+                model: 'gpt-3.5-turbo',
+                temperature: 0.7,
+                max_tokens: 4000
+            }));
+        });
+
+        it('should respect custom truncation indicators', async () => {
+            mockCreate
+                .mockResolvedValueOnce({ choices: [{ message: { content: 'Content[more]' } }] })
+                .mockResolvedValueOnce(mockBaseResponse);
+
+            await serviceWithConfig.generateLectureNotes('Test Topic');
+            expect(mockCreate).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('response validation', () => {
+        it('should handle complete responses correctly', async () => {
+            mockCreate.mockResolvedValueOnce(mockComplexResponse);
+            const notes = await service.generateLectureNotes('Test Topic');
+            expect(mockCreate).toHaveBeenCalledTimes(1);
+            expect(notes.content).toContain('\\begin{theorem}');
+            expect(notes.content).toContain('```javascript');
+        });
+
+        it('should detect and fix incomplete LaTeX and code blocks', async () => {
+            mockCreate
+                .mockResolvedValueOnce(mockIncompleteResponse)
+                .mockResolvedValueOnce({ choices: [{ message: { content: '\\end{theorem}\n```' } }] });
+
+            const notes = await service.generateLectureNotes('Test Topic');
+            expect(mockCreate).toHaveBeenCalledTimes(2);
+            expect(notes.content).toContain('\\begin{theorem}');
+            expect(notes.content).toContain('\\end{theorem}');
+            expect(notes.content).toContain('```javascript');
+            expect(notes.content).toContain('```');
+        });
+
+        it('should respect maxAttempts configuration', async () => {
+            mockCreate.mockResolvedValue(mockIncompleteResponse);
+
+            await expect(serviceWithConfig.generateLectureNotes('Test Topic'))
+                .rejects
+                .toThrow('Failed to generate complete response after maximum attempts');
+            expect(mockCreate).toHaveBeenCalledTimes(2); // Custom maxAttempts is 2
         });
     });
 

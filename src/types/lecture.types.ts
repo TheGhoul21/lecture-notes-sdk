@@ -16,17 +16,32 @@ export interface LectureNotesOptions {
     context?: string;
     apiKey: string;
     format?: LectureFormat;
+    temperature?: number;
 }
 
 export interface TranscriptionOptions {
     transcript: string;
     format?: LectureFormat;
     apiKey: string;
+    temperature?: number;
 }
 
 export interface AudioTranscriptionOptions {
-    audioTranscript: string;
+    audioPath: string;
     apiKey: string;
+    chunkDuration?: number; // Duration in seconds for splitting audio
+}
+
+export interface PDFProcessingOptions {
+    pdfPath: string;
+    format?: LectureFormat;
+    apiKey: string;
+    additionalContext?: {
+        courseTitle?: string;
+        topic?: string;
+        level?: string;
+        textbook?: string;
+    };
 }
 
 export interface SectionRefinementOptions {
@@ -34,10 +49,34 @@ export interface SectionRefinementOptions {
     transcript: string;
     format?: LectureFormat;
     apiKey: string;
+    additionalFiles?: FileData[];
 }
 
-export interface PDFAugmentationOptions {
-    pdfContent: string;
-    format?: LectureFormat;
+export interface FileData {
+    fileId: string;
+    mimeType: string;
+    name: string;
+}
+
+export interface MessageContent {
+    text?: string;
+    files?: FileData[];
+}
+
+export interface ModelConfig {
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    baseUrl?: string;
+    maxAttempts?: number;
+    responseValidation?: {
+        checkLaTeXBalance?: boolean;
+        checkCodeBlocks?: boolean;
+        checkJsonBalance?: boolean;
+        customIndicators?: string[];
+    };
+}
+
+export interface ServiceConfig extends ModelConfig {
     apiKey: string;
 }
