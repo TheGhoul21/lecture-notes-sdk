@@ -33,12 +33,12 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yourusername/lecture-notes-sdk.git"
+    "url": "git+https://github.com/TheGhoul21/lecture-notes-sdk.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/lecture-notes-sdk/issues"
+    "url": "https://github.com/TheGhoul21/lecture-notes-sdk/issues"
   },
-  "homepage": "https://github.com/yourusername/lecture-notes-sdk#readme",
+  "homepage": "https://github.com/TheGhoul21/lecture-notes-sdk#readme",
   "devDependencies": {
     "@types/jest": "^29.5.14",
     "@types/node": "^22.14.1",
