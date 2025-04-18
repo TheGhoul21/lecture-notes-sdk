@@ -1,7 +1,7 @@
 import { OpenAI } from 'openai';
 import type { ChatCompletion } from 'openai/resources/chat/completions';
-import { ChatCompletionMessageParam, ChatCompletionContentPart, ChatCompletionContentPartText } from 'openai/resources/chat';
-import { LectureNotes, LectureFormat } from '../types/lecture.types';
+import { ChatCompletionMessageParam } from 'openai/resources/chat';
+import { LectureNotes, LectureFormat, ServiceConfig } from '../types/lecture.types';
 import {
     SYSTEM_PROMPT_WITH_TRANSCRIPTIONS,
     SYSTEM_PROMPT_WITH_TRANSCRIPTIONS_MARKDOWN,
@@ -21,58 +21,30 @@ import { promises as fs } from 'fs';
 import { handleError, OpenAIError, FileProcessingError } from '../utils/error.utils';
 import * as validate from '../utils/validation.utils';
 import { withRetry, throttler } from '../utils/retry.utils';
+import { AIService } from './ai.service';
 
-export class OpenAIService {
+export class OpenAIService extends AIService {
     private client: OpenAI;
-    private readonly config: Required<Omit<ModelConfig, 'baseUrl'>> & Pick<ModelConfig, 'baseUrl'>;
 
     constructor(config: string | ServiceConfig) {
+        super(config);
         try {
             validate.validateConfig(config);
             
-            const defaultConfig: Required<Omit<ModelConfig, 'baseUrl'>> & Pick<ModelConfig, 'baseUrl'> = {
-                model: "gpt-4",
-                temperature: 0.4,
-                maxTokens: 8192,
-                baseUrl: undefined,
-                maxAttempts: 3,
-                responseValidation: {
-                    checkLaTeXBalance: true,
-                    checkCodeBlocks: true,
-                    checkJsonBalance: true,
-                    customIndicators: [
-                        '...',
-                        '[continued]',
-                        '[truncated]',
-                        'To be continued',
-                        'Continued in next part'
-                    ]
-                }
-            };
-
             if (typeof config === 'string') {
                 this.client = new OpenAI({ apiKey: config });
-                this.config = defaultConfig;
             } else {
                 this.client = new OpenAI({ 
                     apiKey: config.apiKey,
                     baseURL: config.baseUrl
                 });
-                this.config = {
-                    ...defaultConfig,
-                    ...config,
-                    responseValidation: {
-                        ...defaultConfig.responseValidation,
-                        ...config.responseValidation
-                    }
-                };
             }
         } catch (error) {
             throw handleError(error);
         }
     }
 
-    private isResponseComplete(content: string): boolean {
+    protected isResponseComplete(content: string): boolean {
         const validation = this.config.responseValidation;
         
         // Check for truncation indicators
@@ -216,6 +188,7 @@ export class OpenAIService {
     async generateFromTranscript(transcript: string, format: LectureFormat = 'latex'): Promise<string> {
         try {
             validate.validateTranscript(transcript);
+            validate.validateFormat(format);
 
             const systemPrompt = format === 'latex' 
                 ? SYSTEM_PROMPT_WITH_TRANSCRIPTIONS 
@@ -311,6 +284,7 @@ export class OpenAIService {
     async generateScaffold(transcript: string, format: LectureFormat = 'latex'): Promise<string> {
         try {
             validate.validateTranscript(transcript);
+            validate.validateFormat(format);
 
             const systemPrompt = format === 'latex' 
                 ? DEFINE_SCAFFOLD_WITH_TRANSCRIPT 
@@ -336,6 +310,7 @@ export class OpenAIService {
     async augmentFromPDF(pdfContent: string, format: LectureFormat = 'latex'): Promise<string> {
         try {
             validate.validatePDFContent(pdfContent);
+            validate.validateFormat(format);
 
             const systemPrompt = format === 'latex' 
                 ? AUGMENT_PDF_LESSON_LATEX_SYNTAX 
@@ -508,24 +483,6 @@ interface FileData {
 interface AudioTranscriptionOptions {
     audioPath: string;
     chunkDuration?: number;
-}
-
-interface ModelConfig {
-    model?: string;
-    temperature?: number;
-    maxTokens?: number;
-    baseUrl?: string;
-    maxAttempts?: number;
-    responseValidation?: {
-        checkLaTeXBalance?: boolean;
-        checkCodeBlocks?: boolean;
-        checkJsonBalance?: boolean;
-        customIndicators?: string[];
-    };
-}
-
-interface ServiceConfig extends ModelConfig {
-    apiKey: string;
 }
 
 interface MessageContent {

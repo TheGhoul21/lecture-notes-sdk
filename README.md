@@ -1,6 +1,6 @@
 # Lecture Notes SDK
 
-A TypeScript SDK for generating and managing lecture notes using AI, with support for both LaTeX and Markdown formats.
+A TypeScript SDK for generating and managing lecture notes using AI, with support for multiple AI vendors and both LaTeX and Markdown formats.
 
 ## Installation
 
@@ -11,6 +11,7 @@ npm install lecture-notes-sdk
 ## Features
 
 - Generate lecture notes from topics, transcripts, or audio
+- Support for multiple AI vendors (OpenAI, Google Gemini)
 - Support for both LaTeX and Markdown output formats
 - Advanced text processing and formatting utilities
 - Section refinement and document scaffolding
@@ -20,15 +21,36 @@ npm install lecture-notes-sdk
 
 ## Usage
 
+### Choosing an AI Provider
+
+The SDK supports multiple AI providers. You can choose between OpenAI and Google Gemini:
+
+```typescript
+import { OpenAIService, GeminiService } from 'lecture-notes-sdk';
+
+// Using OpenAI
+const openAI = new OpenAIService('your-openai-api-key');
+
+// Using Google Gemini
+const gemini = new GeminiService('your-gemini-api-key');
+
+// You can also pass configuration options
+const serviceWithConfig = new OpenAIService({
+    apiKey: 'your-api-key',
+    model: 'gpt-4',  // or 'gemini-pro' for Gemini
+    temperature: 0.4,
+    maxTokens: 8192
+});
+```
+
 ### Basic Lecture Notes Generation
 
 ```typescript
-import { OpenAIService } from 'lecture-notes-sdk';
+// Using OpenAI
+const openAINotes = await openAI.generateLectureNotes('Introduction to TypeScript');
 
-const openAI = new OpenAIService('your-api-key');
-
-// Generate basic lecture notes
-const notes = await openAI.generateLectureNotes('Introduction to TypeScript');
+// Using Gemini
+const geminiNotes = await gemini.generateLectureNotes('Introduction to TypeScript');
 ```
 
 ### Working with Transcripts
@@ -44,7 +66,7 @@ const markdownNotes = await openAI.generateFromTranscript(transcript, 'markdown'
 ### Audio Transcription Processing
 
 ```typescript
-// Generate notes from an audio transcript
+// Note: Currently only supported with OpenAI
 const notes = await openAI.generateFromAudio(audioTranscript);
 ```
 
@@ -95,15 +117,41 @@ const markdown = generateMarkdown(content);
 
 ## API Reference
 
-### OpenAIService
+### Base AIService Class
 
-The main class for interacting with the AI capabilities.
+The abstract base class that all AI service implementations extend.
+
+### OpenAIService and GeminiService
+
+Concrete implementations of AIService for specific vendors:
 
 ```typescript
-const service = new OpenAIService(apiKey: string);
+const service = new OpenAIService(apiKeyOrConfig);
+const gemini = new GeminiService(apiKeyOrConfig);
+```
+
+Where `apiKeyOrConfig` can be either a string API key or a configuration object:
+
+```typescript
+interface ServiceConfig {
+    apiKey: string;
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    baseUrl?: string;
+    maxAttempts?: number;
+    responseValidation?: {
+        checkLaTeXBalance?: boolean;
+        checkCodeBlocks?: boolean;
+        checkJsonBalance?: boolean;
+        customIndicators?: string[];
+    };
+}
 ```
 
 #### Methods
+
+All services implement these methods:
 
 - `generateLectureNotes(topic: string, context?: string): Promise<LectureNotes>`
 - `generateFromTranscript(transcript: string, format?: LectureFormat): Promise<string>`
@@ -111,6 +159,8 @@ const service = new OpenAIService(apiKey: string);
 - `refineSection(section: string, transcript: string, format?: LectureFormat): Promise<string>`
 - `generateScaffold(transcript: string, format?: LectureFormat): Promise<string>`
 - `augmentFromPDF(pdfContent: string, format?: LectureFormat): Promise<string>`
+
+Note: Some features like audio processing and YouTube video processing are currently only supported by OpenAIService.
 
 ### Utility Functions
 

@@ -6,7 +6,7 @@ dotenv.config();
 
 async function main() {
     // Initialize the OpenAI service with your API key
-    const openAI = new OpenAIService(process.env.OPENAI_API_KEY || '');
+    const openAI = new OpenAIService(process.env.GEMINI_API_KEY || '');
 
     try {
         // Generate basic lecture notes
